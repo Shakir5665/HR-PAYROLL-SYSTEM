@@ -184,4 +184,16 @@ public class EmployeeController : ControllerBase
             employee.User.Email
         ));
     }
+
+    [HttpGet("departments")]
+    [AllowAnonymous] // Allow anyone to see departments for onboarding if needed, or keep [Authorize] if it's already on the class.
+    public async Task<ActionResult<IEnumerable<string>>> GetDepartments()
+    {
+        var departments = await _context.Departments
+            .Select(d => d.Name)
+            .OrderBy(n => n)
+            .ToListAsync();
+        
+        return Ok(departments);
+    }
 }

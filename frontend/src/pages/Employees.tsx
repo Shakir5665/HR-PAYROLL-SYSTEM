@@ -35,6 +35,14 @@ const Employees: React.FC = () => {
     },
   });
 
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: async () => {
+      const response = await api.get('/employee/departments');
+      return response.data;
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/employee/${id}`),
     onSuccess: () => {
@@ -202,14 +210,19 @@ const Employees: React.FC = () => {
         </div>
       )}
 
-      {showAddModal && <AddEmployeeModal onClose={() => setShowAddModal(false)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['employees'] })} showAlert={showAlert} />}
-      {showEditModal && <EditEmployeeModal employee={showEditModal} onClose={() => setShowEditModal(null)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['employees'] })} showAlert={showAlert} />}
+      {showAddModal && <AddEmployeeModal onClose={() => setShowAddModal(false)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['employees'] })} showAlert={showAlert} departments={departments || []} />}
+      {showEditModal && <EditEmployeeModal employee={showEditModal} onClose={() => setShowEditModal(null)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['employees'] })} showAlert={showAlert} departments={departments || []} />}
       {showViewModal && <ViewEmployeeModal employee={showViewModal} onClose={() => setShowViewModal(null)} />}
     </div>
   );
 };
 
-const AddEmployeeModal: React.FC<{ onClose: () => void, onSuccess: () => void, showAlert: (title: string, message: string) => void }> = ({ onClose, onSuccess, showAlert }) => {
+const AddEmployeeModal: React.FC<{ 
+  onClose: () => void, 
+  onSuccess: () => void, 
+  showAlert: (title: string, message: string) => void,
+  departments: string[] 
+}> = ({ onClose, onSuccess, showAlert, departments }) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -278,10 +291,9 @@ const AddEmployeeModal: React.FC<{ onClose: () => void, onSuccess: () => void, s
                 onChange={(e) => setFormData({...formData, department: e.target.value})}
               >
                 <option value="">Select Dept</option>
-                <option value="HR">Human Resources</option>
-                <option value="IT">IT Engineering</option>
-                <option value="Finance">Finance</option>
-                <option value="Sales">Sales & Marketing</option>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-1">
@@ -341,7 +353,13 @@ const AddEmployeeModal: React.FC<{ onClose: () => void, onSuccess: () => void, s
   );
 };
 
-const EditEmployeeModal: React.FC<{ employee: any, onClose: () => void, onSuccess: () => void, showAlert: (title: string, message: string) => void }> = ({ employee, onClose, onSuccess, showAlert }) => {
+const EditEmployeeModal: React.FC<{ 
+  employee: any, 
+  onClose: () => void, 
+  onSuccess: () => void, 
+  showAlert: (title: string, message: string) => void,
+  departments: string[]
+}> = ({ employee, onClose, onSuccess, showAlert, departments }) => {
   const [formData, setFormData] = useState({
     fullName: employee.fullName,
     department: employee.department,
@@ -392,10 +410,10 @@ const EditEmployeeModal: React.FC<{ employee: any, onClose: () => void, onSucces
                 value={formData.department}
                 onChange={(e) => setFormData({...formData, department: e.target.value})}
               >
-                <option value="HR">Human Resources</option>
-                <option value="IT">IT Engineering</option>
-                <option value="Finance">Finance</option>
-                <option value="Sales">Sales & Marketing</option>
+                <option value="">Select Dept</option>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-1">

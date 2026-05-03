@@ -39,12 +39,23 @@ public class DashboardController : ControllerBase
                 .Where(p => p.Month == DateTime.UtcNow.Month && p.Year == DateTime.UtcNow.Year)
                 .SumAsync(p => p.NetSalary);
 
+            var departmentStats = await _context.Departments
+                .Select(d => new
+                {
+                    Code = d.Name.Length >= 3 ? d.Name.Substring(0, 3).ToUpper() : d.Name.ToUpper(),
+                    Name = d.Name,
+                    Count = _context.Employees.Count(e => e.Department == d.Name && e.IsActive)
+                })
+                .OrderByDescending(d => d.Count)
+                .ToListAsync();
+
             return Ok(new
             {
                 TotalEmployees = totalEmployees,
                 PendingLeaves = pendingLeaves,
                 TotalPayrollThisMonth = totalPayrollThisMonth,
-                ActiveUsers = await _context.Users.CountAsync()
+                ActiveUsers = await _context.Users.CountAsync(),
+                DepartmentStats = departmentStats
             });
         }
         else

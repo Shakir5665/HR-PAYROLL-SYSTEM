@@ -22,35 +22,61 @@ public class PayrollService : IPayrollService
 
         var startOfMonth = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
         var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+        var startOfYear = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var leaveDays = await _context.LeaveRequests
-            .Where(l => l.EmployeeId == employeeId && l.Status == LeaveStatus.Approved && l.StartDate <= endOfMonth && l.EndDate >= startOfMonth)
+        var yearLeaves = await _context.LeaveRequests
+            .Where(l => l.EmployeeId == employeeId 
+                    && l.Status == LeaveStatus.Approved 
+                    && l.EndDate >= startOfYear 
+                    && l.StartDate <= endOfMonth)
             .ToListAsync();
 
-        int totalUnpaidDays = 0;
-        foreach (var leave in leaveDays)
+        int leavesBeforeMonth = 0;
+        int leavesDuringMonth = 0;
+
+        foreach (var leave in yearLeaves)
         {
-            // Logic to calculate days in current month
-            var actualStart = leave.StartDate < startOfMonth ? startOfMonth : leave.StartDate;
-            var actualEnd = leave.EndDate > endOfMonth ? endOfMonth : leave.EndDate;
-            
-            if (leave.Reason.Contains("Unpaid", StringComparison.OrdinalIgnoreCase))
+            DateTime effectiveStart = (leave.StartDate < startOfYear ? startOfYear : leave.StartDate).Date;
+            DateTime effectiveEnd = (leave.EndDate > endOfMonth ? endOfMonth : leave.EndDate).Date;
+
+            if (effectiveEnd < startOfMonth.Date)
             {
-                totalUnpaidDays += (actualEnd - actualStart).Days + 1;
+                leavesBeforeMonth += (effectiveEnd - effectiveStart).Days + 1;
+            }
+            else if (effectiveStart >= startOfMonth.Date)
+            {
+                leavesDuringMonth += (effectiveEnd - effectiveStart).Days + 1;
+            }
+            else
+            {
+                leavesBeforeMonth += (startOfMonth.Date - effectiveStart).Days;
+                leavesDuringMonth += (effectiveEnd - startOfMonth.Date).Days + 1;
             }
         }
 
-        decimal dailyRate = employee.BaseSalary / 22; // Assuming 22 working days
-        decimal unpaidLeaveDeduction = totalUnpaidDays * dailyRate;
+        // Industrial Rule: 12 Paid Days Quota
+        int annualQuota = 12;
+        int totalPaidUsedUntilStart = Math.Min(annualQuota, leavesBeforeMonth);
+        int totalPaidUsedUntilEnd = Math.Min(annualQuota, leavesBeforeMonth + leavesDuringMonth);
+        
+        int paidDaysThisMonth = totalPaidUsedUntilEnd - totalPaidUsedUntilStart;
+        int unpaidDaysThisMonth = leavesDuringMonth > 0 ? Math.Max(0, leavesDuringMonth - paidDaysThisMonth) : 0;
 
-        decimal grossSalary = employee.BaseSalary + allowances + overtime - unpaidLeaveDeduction;
+        // Deduction Formula: (Salary / 30)
+        decimal dailyRate = employee.BaseSalary / 30;
+        decimal unpaidLeaveDeduction = leavesDuringMonth > 0 ? unpaidDaysThisMonth * dailyRate : 0;
+
+        // Update Employee Ledger (Closing Balance)
+        employee.AnnualLeaveBalance = Math.Max(0, annualQuota - (leavesBeforeMonth + leavesDuringMonth));
+
+        decimal grossSalary = (employee.BaseSalary - unpaidLeaveDeduction) + allowances + overtime;
 
         // Sri Lankan Statutory Compliance
-        decimal epfEmployee = grossSalary * 0.08m;
-        decimal epfEmployer = grossSalary * 0.12m;
-        decimal etfEmployer = grossSalary * 0.03m;
+        decimal epfEmployee = Math.Max(0, grossSalary * 0.08m);
+        decimal epfEmployer = Math.Max(0, grossSalary * 0.12m);
+        decimal etfEmployer = Math.Max(0, grossSalary * 0.03m);
 
-        decimal netSalary = grossSalary - epfEmployee;
+        decimal netSalary = Math.Max(0, grossSalary - epfEmployee);
 
         return new PayrollRecord
         {
@@ -66,6 +92,10 @@ public class PayrollService : IPayrollService
             EPFEmployer = epfEmployer,
             ETFEmployer = etfEmployer,
             NetSalary = netSalary,
+            PaidLeaveUsed = paidDaysThisMonth,
+            UnpaidLeaveUsed = unpaidDaysThisMonth,
+            LeaveOpeningBalance = Math.Max(0, annualQuota - leavesBeforeMonth),
+            LeaveClosingBalance = employee.AnnualLeaveBalance,
             ProcessedAt = DateTime.UtcNow
         };
     }

@@ -15,6 +15,44 @@ public static class DbInitializer
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
         await context.Database.EnsureCreatedAsync();
+        
+        // Create Departments table if it doesn't exist
+        await context.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS ""Departments"" (
+                ""Id"" uuid NOT NULL,
+                ""Name"" text NOT NULL,
+                ""Description"" text,
+                ""CreatedAt"" timestamp with time zone NOT NULL,
+                CONSTRAINT ""PK_Departments"" PRIMARY KEY (""Id"")
+            );
+        ");
+
+        // Add missing columns to PayrollRecords if they don't exist
+        await context.Database.ExecuteSqlRawAsync(@"
+            ALTER TABLE ""PayrollRecords"" ADD COLUMN IF NOT EXISTS ""UnpaidLeaveDeduction"" numeric DEFAULT 0;
+            ALTER TABLE ""PayrollRecords"" ADD COLUMN IF NOT EXISTS ""PaidLeaveUsed"" integer DEFAULT 0;
+            ALTER TABLE ""PayrollRecords"" ADD COLUMN IF NOT EXISTS ""UnpaidLeaveUsed"" integer DEFAULT 0;
+            ALTER TABLE ""PayrollRecords"" ADD COLUMN IF NOT EXISTS ""LeaveOpeningBalance"" numeric DEFAULT 0;
+            ALTER TABLE ""PayrollRecords"" ADD COLUMN IF NOT EXISTS ""LeaveClosingBalance"" numeric DEFAULT 0;
+
+            -- One-time migration: Initialize all employees with the 12-day industrial quota if they are currently at 0
+            UPDATE ""Employees"" SET ""AnnualLeaveBalance"" = 12 WHERE ""AnnualLeaveBalance"" = 0;
+        ");
+
+        if (!await context.Departments.AnyAsync())
+
+        {
+            var departments = new List<Department>
+            {
+                new Department { Id = Guid.NewGuid(), Name = "Human Resources", Description = "HR Management" },
+                new Department { Id = Guid.NewGuid(), Name = "IT Engineering", Description = "Software & Infrastructure" },
+                new Department { Id = Guid.NewGuid(), Name = "Finance", Description = "Accounting & Payroll" },
+                new Department { Id = Guid.NewGuid(), Name = "Sales & Marketing", Description = "Revenue Generation" },
+                new Department { Id = Guid.NewGuid(), Name = "Legal", Description = "Compliance & Law" }
+            };
+            context.Departments.AddRange(departments);
+            await context.SaveChangesAsync();
+        }
 
         if (!await context.Users.AnyAsync())
         {

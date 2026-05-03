@@ -13,12 +13,16 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import ChangeCredentialsModal from './ChangeCredentialsModal';
+
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
+
 
   const handleLogout = () => {
     logout();
@@ -96,9 +100,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="flex items-center gap-2 text-xs">
               <span className="text-slate-400">Welcome,</span>
               <span className="font-bold text-cyan-400 uppercase tracking-wider">{user?.role} USER</span>
-              <div className="w-8 h-8 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center ml-2">
-                <Shield className="w-4 h-4 text-slate-400" />
-              </div>
+              <button
+                onClick={() => setIsCredentialsModalOpen(true)}
+                className="w-8 h-8 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center ml-2 hover:bg-slate-700 hover:border-cyan-500/50 transition-all group"
+                title="Security Settings"
+              >
+                <Shield className="w-4 h-4 text-slate-400 group-hover:text-cyan-400" />
+              </button>
             </div>
 
             <button
@@ -132,6 +140,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </footer>
         </div>
       </main>
+
+      <ChangeCredentialsModal
+        isOpen={isCredentialsModalOpen}
+        onClose={() => setIsCredentialsModalOpen(false)}
+      />
     </div>
   );
 };

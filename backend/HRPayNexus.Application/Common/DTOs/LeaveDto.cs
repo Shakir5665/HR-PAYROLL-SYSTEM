@@ -6,6 +6,7 @@ public record LeaveRequestDto(
     Guid Id,
     Guid EmployeeId,
     string EmployeeName,
+    decimal AnnualLeaveBalance,
     DateTime StartDate,
     DateTime EndDate,
     string Reason,

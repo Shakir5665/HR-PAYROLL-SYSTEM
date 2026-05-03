@@ -15,6 +15,10 @@ public class PayrollRecord
     public decimal EPFEmployer { get; set; } // 12%
     public decimal ETFEmployer { get; set; } // 3%
     public decimal NetSalary { get; set; }
+    public int PaidLeaveUsed { get; set; }
+    public int UnpaidLeaveUsed { get; set; }
+    public decimal LeaveOpeningBalance { get; set; }
+    public decimal LeaveClosingBalance { get; set; }
     public string? PayslipPdfUrl { get; set; }
     public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
 

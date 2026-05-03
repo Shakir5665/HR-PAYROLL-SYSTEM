@@ -69,124 +69,148 @@ const Leaves: React.FC = () => {
   const isManagerOrAdmin = ['Admin', 'HR', 'Manager'].includes(user?.role || '');
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-lg shadow-lg">
-              <Calendar className="w-5 h-5 text-white" />
+            <div className="p-2.5 bg-blue-600 rounded-2xl shadow-xl shadow-blue-600/20">
+              <Calendar className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Leave Management</h1>
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Leave Management</h1>
+              <p className="text-slate-500 font-medium text-sm">Real-time systemic tracking of employee absences</p>
+            </div>
           </div>
-          <p className="text-slate-500 mt-1 font-medium text-sm">Track and Approve Absences</p>
         </div>
         <button
           onClick={() => setShowRequestModal(true)}
-          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-bold transition-all flex items-center gap-2 text-sm shadow-lg shadow-blue-600/20 active:scale-95"
+          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 shadow-xl shadow-blue-600/25 active:scale-95"
         >
           <Send className="w-4 h-4" />
           Lodge Request
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm flex flex-col">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-          <div className="flex-1 max-w-md hidden md:block" />
-          <div className="relative">
+      <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col">
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search leaves..."
-              className="bg-white border border-slate-200 rounded-lg px-5 py-2 text-xs w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              placeholder="Search by employee or reason..."
+              className="bg-transparent border-none text-sm w-80 focus:outline-none focus:ring-0 text-slate-600 placeholder:text-slate-400 font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
-                <th className="px-6 py-4">Employee</th>
-                <th className="px-6 py-4">Balance</th>
-                <th className="px-6 py-4">Duration</th>
-                <th className="px-6 py-4 text-center">Start Date</th>
-                <th className="px-6 py-4 text-center">End Date</th>
-                <th className="px-6 py-4">Reason</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Actions</th>
+              <tr className="bg-slate-50/50 text-slate-900 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
+                <th className="px-8 py-5">Employee Name</th>
+                <th className="px-6 py-5">Balance Leaves</th>
+                <th className="px-6 py-5">Duration</th>
+                <th className="px-6 py-5">Period</th>
+                <th className="px-6 py-5">Reason</th>
+                <th className="px-6 py-5">Status</th>
+                <th className="px-8 py-5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
-                <tr><td colSpan={8} className="px-6 py-10 text-center text-slate-400 text-sm">Loading leave records...</td></tr>
+                <tr><td colSpan={8} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div><span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Synchronizing...</span></div></td></tr>
               ) : leaves?.length === 0 ? (
-                <tr><td colSpan={8} className="px-6 py-10 text-center text-slate-400 text-sm">No leave records found.</td></tr>
-              ) : leaves?.map((leave: any) => (
-                <tr key={leave.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-slate-900">{leave.employeeName}</span>
+                <tr><td colSpan={8} className="px-8 py-20 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">No systemic records found.</td></tr>
+              ) : leaves?.filter((l: any) => l.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) || l.reason.toLowerCase().includes(searchTerm.toLowerCase())).map((leave: any) => (
+                <tr key={leave.id} className="hover:bg-slate-50/80 transition-colors group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs border border-slate-200">
+                        {leave.employeeName.charAt(0)}
+                      </div>
+                      <span className="text-sm font-black text-slate-900">{leave.employeeName}</span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 bg-amber-400 text-white text-[10px] font-bold rounded-lg uppercase shadow-sm shadow-amber-400/20">
-                      7 days
+                  <td className="px-6 py-6">
+                    <div className="flex flex-col gap-1">
+                      <span className={`px-3 py-1 w-fit rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm ${leave.annualLeaveBalance <= 0 ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                        {leave.annualLeaveBalance} Days
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-6">
+                    <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">
+                      {Math.ceil((new Date(leave.endDate).getTime() - new Date(leave.startDate).getTime()) / (1000 * 3600 * 24)) + 1} Day(s)
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-medium">
-                    {Math.ceil((new Date(leave.endDate).getTime() - new Date(leave.startDate).getTime()) / (1000 * 3600 * 24)) + 1} day(s)
+                  <td className="px-6 py-6">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-slate-900">{new Date(leave.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">— {new Date(leave.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-medium text-center">
-                    {new Date(leave.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  <td className="px-6 py-6">
+                    <div className="max-w-xs">
+                      <p className="text-sm font-medium text-slate-600 leading-relaxed truncate group-hover:whitespace-normal group-hover:overflow-visible group-hover:break-words">
+                        {leave.reason}
+                      </p>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-medium text-center">
-                    {new Date(leave.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-medium italic">
-                    {leave.reason}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${leave.status === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' :
-                      leave.status === 1 ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' :
-                        'bg-red-100 text-red-600 border border-red-200'
-                      }`}>
+                  <td className="px-6 py-6">
+                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] shadow-md border-none ${
+                      leave.status === 0 ? 'bg-amber-500 text-white' :
+                      leave.status === 1 ? 'bg-emerald-600 text-white' :
+                      'bg-rose-600 text-white'
+                    }`}>
                       {leave.status === 0 ? 'Pending' : leave.status === 1 ? 'Approved' : 'Rejected'}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    {isManagerOrAdmin && leave.status === 0 ? (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleAction(leave.id, 1)}
-                          disabled={updateStatusMutation.isPending}
-                          className="px-3 py-1.5 bg-emerald-600 text-white rounded-md text-[10px] font-bold hover:bg-emerald-700 transition-all flex items-center gap-1 shadow-sm shadow-emerald-600/20 disabled:opacity-50"
-                        >
-                          <Check className="w-3 h-3" /> Approve
-                        </button>
-                        <button
-                          onClick={() => handleAction(leave.id, 2)}
-                          disabled={updateStatusMutation.isPending}
-                          className="px-3 py-1.5 bg-red-500 text-white rounded-md text-[10px] font-bold hover:bg-red-600 transition-all flex items-center gap-1 shadow-sm shadow-red-500/20 disabled:opacity-50"
-                        >
-                          <X className="w-3 h-3" /> Reject
-                        </button>
-                        <button
-                          onClick={() => handleDelete(leave.id)}
-                          disabled={deleteMutation.isPending}
-                          className="p-1.5 border border-red-400 text-red-400 rounded-md hover:bg-red-50 text-xs disabled:opacity-50"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
+                  <td className="px-8 py-6 text-right">
+                    <div className="flex items-center justify-end gap-3 transition-all">
+                      {isManagerOrAdmin && (
+                        <>
+                          <button
+                            onClick={() => handleAction(leave.id, 1)}
+                            disabled={leave.status !== 0}
+                            className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                              leave.status === 0 
+                                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20 active:scale-95' 
+                                : 'bg-slate-50 text-slate-200 shadow-none cursor-not-allowed opacity-50'
+                            }`}
+                            title={leave.status === 0 ? "Approve Request" : "Decision already made"}
+                          >
+                            <Check className="w-4 h-4 stroke-[3]" />
+                          </button>
+                          <button
+                            onClick={() => handleAction(leave.id, 2)}
+                            disabled={leave.status !== 0}
+                            className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                              leave.status === 0 
+                                ? 'bg-rose-600 text-white hover:bg-rose-700 shadow-rose-600/20 active:scale-95' 
+                                : 'bg-slate-50 text-slate-200 shadow-none cursor-not-allowed opacity-50'
+                            }`}
+                            title={leave.status === 0 ? "Reject Request" : "Decision already made"}
+                          >
+                            <X className="w-4 h-4 stroke-[3]" />
+                          </button>
+                        </>
+                      )}
+                      
                       <button
                         onClick={() => handleDelete(leave.id)}
-                        disabled={deleteMutation.isPending}
-                        className="p-1.5 border border-red-400 text-red-400 rounded-md hover:bg-red-50 text-xs opacity-50"
+                        disabled={leave.status === 1}
+                        className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                          leave.status !== 1 
+                            ? 'bg-slate-900 text-white hover:bg-black shadow-slate-900/20 active:scale-95' 
+                            : 'bg-slate-50 text-slate-200 shadow-none cursor-not-allowed opacity-50'
+                        }`}
+                        title={leave.status !== 1 ? "Delete Record" : "Approved records cannot be deleted"}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4 stroke-[3]" />
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -194,11 +218,13 @@ const Leaves: React.FC = () => {
           </table>
         </div>
 
-        <div className="px-6 py-4 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-          <span>Showing 1 to {leaves?.length || 0} of {leaves?.length || 0} entries</span>
+        <div className="px-8 py-6 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Showing <span className="text-slate-900">{leaves?.length || 0}</span> Systemic Entries
+          </p>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 border border-slate-200 rounded-md hover:bg-white transition-colors disabled:opacity-50" disabled>Prev</button>
-            <button className="px-3 py-1.5 border border-slate-200 rounded-md hover:bg-white transition-colors disabled:opacity-50" disabled>Next</button>
+            <button className="px-4 py-2 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed">Previous</button>
+            <button className="px-4 py-2 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed">Next</button>
           </div>
         </div>
       </div>

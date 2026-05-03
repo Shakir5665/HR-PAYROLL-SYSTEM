@@ -63,6 +63,7 @@ public class PayrollController : ControllerBase
                     record.BaseSalary,
                     record.Allowances,
                     record.Overtime,
+                    record.UnpaidLeaveDeduction,
                     record.EPFEmployee,
                     record.EPFEmployer,
                     record.ETFEmployer,
@@ -126,6 +127,54 @@ public class PayrollController : ControllerBase
             .ToListAsync();
 
         return Ok(history);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult> GetPayrollDetails(Guid id)
+    {
+        var record = await _context.PayrollRecords
+            .Include(p => p.Employee)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (record == null) return NotFound();
+
+        // Check permission: Admin, Finance or the Employee themselves
+        var subClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
+                    ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(subClaim)) return Unauthorized();
+        
+        if (!Guid.TryParse(subClaim, out var userId)) return BadRequest();
+
+        var userRole = User.FindFirst("role")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+        if (userRole == "Employee" && record.Employee.UserId != userId)
+        {
+            return Forbid();
+        }
+
+        return Ok(new {
+            record.Id,
+            record.EmployeeId,
+            EmployeeName = record.Employee.FullName,
+            record.Employee.EmployeeCode,
+            Department = record.Employee.Department,
+            record.BaseSalary,
+            record.Allowances,
+            record.Overtime,
+            record.UnpaidLeaveDeduction,
+            record.EPFEmployee,
+            record.EPFEmployer,
+            record.ETFEmployer,
+            record.GrossSalary,
+            record.NetSalary,
+            record.PaidLeaveUsed,
+            record.UnpaidLeaveUsed,
+            record.LeaveOpeningBalance,
+            record.LeaveClosingBalance,
+            record.Month,
+            record.Year,
+            record.ProcessedAt
+        });
     }
 
     [HttpGet("{id}/payslip")]

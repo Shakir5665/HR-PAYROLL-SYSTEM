@@ -3,6 +3,9 @@ using HRPayNexus.Application.Common.Interfaces;
 using HRPayNexus.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace HRPayNexus.API.Controllers;
 
@@ -67,5 +70,47 @@ public class AuthController : ControllerBase
             accessToken, 
             newRefreshToken, 
             new UserDto(user.Id, user.Email, user.Role.ToString())));
+    }
+
+    [Authorize]
+    [HttpPost("change-credentials")]
+    public async Task<IActionResult> ChangeCredentials(ChangeCredentialsRequest request)
+    {
+        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
+                        ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            return Unauthorized();
+        }
+
+        var userId = Guid.Parse(userIdClaim);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        // Check if new email is already taken
+        if (!string.IsNullOrWhiteSpace(request.NewEmail) && request.NewEmail != user.Email)
+        {
+            var existingUser = await _context.Users.AnyAsync(u => u.Email == request.NewEmail);
+            if (existingUser)
+            {
+                return BadRequest("Email is already in use");
+            }
+            user.Email = request.NewEmail;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+        }
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Credentials updated successfully" });
     }
 }

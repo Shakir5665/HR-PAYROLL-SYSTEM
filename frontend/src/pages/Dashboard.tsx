@@ -1,16 +1,24 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   CreditCard,
   Hourglass,
   Building2,
   LineChart,
-  User
+  User,
+  Calendar,
+  Briefcase,
+  History
 } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 const Dashboard: React.FC = () => {
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
@@ -41,51 +49,79 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  // Sample departments data if not in stats
-  const departments = [
-    { code: 'HR_SEED', name: 'HR', count: 1 },
-    { code: 'IT_SEED', name: 'IT', count: 2 },
-    { code: 'CEO8473', name: 'CEO', count: 1 },
-    { code: 'FIN532a', name: 'Finance', count: 1 },
-    { code: 'SOF519e', name: 'Software Engineer', count: 0 },
-    { code: 'JNO2564', name: 'jnojounou', count: 0 },
-  ];
+  const departments = stats.departmentStats || [];
 
   return (
     <div className="space-y-8">
       <header>
         <div className="flex items-center gap-3">
           <LineChart className="w-8 h-8 text-slate-800" />
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Nexus Operations Overview</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">The Overview</h1>
         </div>
         <p className="text-slate-500 mt-1 font-medium text-sm">Real-time systemic analytics of the HRPay Nexus Ecosystem</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Employees"
-          value={stats.totalEmployees}
-          icon={Users}
-          color="blue"
-        />
-        <StatCard
-          title="Monthly Payroll"
-          value={`${stats.totalPayrollThisMonth.toLocaleString()}.00`}
-          icon={CreditCard}
-          color="green"
-        />
-        <StatCard
-          title="Pending Leaves"
-          value={stats.pendingLeaves}
-          icon={Hourglass}
-          color="amber"
-        />
-        <StatCard
-          title="Departments"
-          value={departments.length}
-          icon={Building2}
-          color="sky"
-        />
+        {user?.role === 'Employee' ? (
+          <>
+            <StatCard
+              title="Leave Balance"
+              value={stats.leaveBalance}
+              icon={Calendar}
+              color="blue"
+              onClick={() => navigate('/leaves')}
+            />
+            <StatCard
+              title="Pending Requests"
+              value={stats.pendingRequests}
+              icon={Hourglass}
+              color="amber"
+              onClick={() => navigate('/leaves')}
+            />
+            <StatCard
+              title="Designation"
+              value={stats.designation}
+              icon={Briefcase}
+              color="sky"
+            />
+            <StatCard
+              title="Years with Nexus"
+              value={new Date().getFullYear() - new Date(stats.joinedDate).getFullYear()}
+              icon={History}
+              color="green"
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Total Employees"
+              value={stats.totalEmployees}
+              icon={Users}
+              color="blue"
+              onClick={() => navigate('/employees')}
+            />
+            <StatCard
+              title="Monthly Payroll"
+              value={`${stats.totalPayrollThisMonth?.toLocaleString() || 0}.00`}
+              icon={CreditCard}
+              color="green"
+              onClick={() => navigate('/payroll')}
+            />
+            <StatCard
+              title="Pending Leaves"
+              value={stats.pendingLeaves}
+              icon={Hourglass}
+              color="amber"
+              onClick={() => navigate('/leaves')}
+            />
+            <StatCard
+              title="Departments"
+              value={departments.length}
+              icon={Building2}
+              color="sky"
+            />
+          </>
+        )}
       </div>
 
       <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
@@ -106,7 +142,7 @@ const Dashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {departments.map((dept) => (
+              {departments.map((dept: any) => (
                 <tr key={dept.code} className="hover:bg-slate-50/80 transition-colors group">
                   <td className="px-6 py-4">
                     <span className="px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-lg uppercase">
@@ -132,7 +168,7 @@ const Dashboard: React.FC = () => {
   );
 };
 
-const StatCard = ({ title, value, icon: Icon, color }: any) => {
+const StatCard = ({ title, value, icon: Icon, color, onClick }: any) => {
   const iconStyles: any = {
     blue: 'text-blue-500 bg-blue-50',
     green: 'text-emerald-500 bg-emerald-50',
@@ -141,14 +177,17 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => {
   };
 
   return (
-    <div className="bg-white border border-slate-100 rounded-lg p-6 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+    <div 
+      onClick={onClick}
+      className={`bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex items-center justify-between group transition-all ${onClick ? 'cursor-pointer hover:shadow-xl hover:-translate-y-1 hover:border-slate-300' : ''}`}
+    >
       <div>
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{title}</p>
         <p className={`text-3xl font-black tracking-tight ${color === 'green' ? 'text-emerald-600' : 'text-slate-900'}`}>
           {value}
         </p>
       </div>
-      <div className={`p-4 rounded-lg transition-all group-hover:scale-110 ${iconStyles[color]}`}>
+      <div className={`p-4 rounded-2xl transition-all group-hover:scale-110 ${iconStyles[color]}`}>
         <Icon className="w-8 h-8 stroke-[1.5]" />
       </div>
     </div>

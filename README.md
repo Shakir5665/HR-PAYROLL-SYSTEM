@@ -80,3 +80,6 @@ MIT License. Created by Antigravity.
 ## 🧪 Testing Payroll Logic
 Unit tests are located in `HRPayNexus.Tests` (Note: Add a test project if needed).
 Statutory logic is in `HRPayNexus.Application/Services/PayrollService.cs`.
+
+Email: admin@hrpaynexus.com
+Password: Admin@123
